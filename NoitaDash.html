@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noita Dashboard</title>
+    
+    <!-- INLINE SVG FAVICON: A Noita-style "N" drawn directly in code. Cannot break or cache. -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314161c'/%3E%3Ctext x='50' y='75' font-family='monospace' font-size='80' font-weight='bold' fill='%23ea580c' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* True Noita Fonts */
+        @font-face {
+            font-family: 'NoitaPixel';
+            src: url('https://noita.wiki.gg/images/0/07/NoitaPixel.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'NoitaBlackletter';
+            src: url('https://noita.wiki.gg/images/8/81/NoitaBlackletter.ttf') format('truetype');
+        }
+
+        @tailwind base;
+        @tailwind components;
+        @tailwind utilities;
+
+        body {
+            font-family: 'NoitaPixel', monospace;
+            image-rendering: pixelated;
+            background-color: #050608;
+            color: #d1d5db;
+        }
+
+        .panel-container {
+            transition: all 0.2s ease;
+            border: 1px solid #2a2e38;
+            background-color: rgba(20, 22, 28, 0.95);
+            position: relative;
+            z-index: 10;
+        }
+        .panel-container:hover, .panel-container:focus-within {
+            border-color: #f59e0b;
+            box-shadow: 0 0 15px -3px rgba(245, 158, 11, 0.2);
+        }
+
+        .btn-sync {
+            background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
+            border: 1px solid #9a3412;
+        }
+        .btn-sync:hover {
+            background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+            box-shadow: 0 0 15px rgba(234, 88, 12, 0.4);
+        }
+        
+        input {
+            font-family: 'NoitaPixel', monospace;
+        }
+        
+        .font-noita-header {
+            font-family: 'NoitaPixel', monospace;
+            letter-spacing: 0.05em;
+        }
+
+        .eye-glow {
+            box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.1);
+        }
+
+        /* The scaling trick for the All Seeing Eye iframe */
+        .scaled-iframe {
+            width: 150%;
+            height: 150%;
+            transform: scale(0.6666);
+            transform-origin: top left;
+            border: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden selection:bg-orange-500 selection:text-black">
+
+    <!-- Top Header Bar -->
+    <header class="relative p-3 flex justify-between items-center z-20 shadow-lg h-[100px] bg-[#14161c] border-b border-gray-700">
+        <div class="flex items-center gap-6 relative z-10 w-full">
+            
+            <!-- Seed & Sync Inputs -->
+            <div class="flex gap-4 items-end bg-black/60 p-2 rounded-sm border border-gray-700 shadow-inner">
+                <div class="relative">
+                    <label class="text-[10px] text-gray-400 block mb-1 uppercase tracking-widest font-bold">World Seed</label>
+                    <input type="text" id="seedInput" value="15152748" class="bg-black text-orange-500 px-3 py-1.5 rounded-sm w-40 border border-gray-700 focus:outline-none focus:border-orange-500 text-lg tracking-wider">
+                </div>
+                <div class="relative">
+                    <label class="text-[10px] text-gray-400 block mb-1 uppercase tracking-widest font-bold">NG+ Cycle</label>
+                    <input type="number" id="ngInput" value="0" min="0" max="28" class="bg-black text-orange-500 px-3 py-1.5 rounded-sm w-20 border border-gray-700 focus:outline-none focus:border-orange-500 text-lg">
+                </div>
+                <button onclick="updateDashboard()" class="btn-sync text-white px-8 py-2 rounded-sm font-bold transition-all duration-200 uppercase tracking-wider text-sm h-[42px]">
+                    Sync
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex flex-1 overflow-hidden p-4 gap-4 max-w-[2200px] mx-auto w-full relative z-10">
+        
+        <!-- LEFT COLUMN: Seed Tools & Progress -->
+        <section class="panel-container w-[25%] min-w-[320px] rounded-sm flex flex-col overflow-hidden">
+            <div class="p-3 border-b border-gray-700 bg-black/50 flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]"></div>
+                <h2 class="font-bold text-sm text-gray-300 uppercase tracking-widest">Tools</h2>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+                
+                <!-- Noitool Card -->
+                <div class="bg-black/40 border border-gray-700 p-4 rounded-sm">
+                    <h3 class="text-gray-200 font-noita-header text-2xl mb-2">Noitool</h3>
+                    <p class="text-xs text-gray-400 mb-3">Copy seed and open Noitool.</p>
+                    <button onclick="copyAndOpenNoitool()" id="copyBtn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 text-center text-xs py-2 rounded-sm transition-all font-bold">
+                        Copy & Open
+                    </button>
+                </div>
+
+                <!-- The All Seeing Eye -->
+                <div class="bg-black/40 border border-purple-900/50 rounded-sm flex-1 flex flex-col overflow-hidden eye-glow">
+                    <div class="p-3 border-b border-purple-900/50 bg-black/60 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]"></div>
+                        <h3 class="text-purple-200 font-noita-header text-2xl tracking-wide">All Seeing Eye</h3>
+                    </div>
+                    
+                    <!-- Container for the scaled iframe -->
+                    <div class="flex-1 bg-[#0a0b0e] relative p-2">
+                        <div class="w-full h-full border border-gray-600 rounded-sm overflow-hidden relative bg-black/50">
+                            <iframe src="https://ipeterov.github.io/noita-progress/" 
+                                    class="scaled-iframe opacity-90 hover:opacity-100 transition-opacity">
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CENTER COLUMN: Telescope Map -->
+        <section class="panel-container flex-1 rounded-sm flex flex-col overflow-hidden">
+            <div class="p-3 border-b border-gray-700 bg-black/50 flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></div>
+                <h2 class="font-bold text-sm text-gray-300 uppercase tracking-widest">Map (Telescope)</h2>
+            </div>
+            <div class="flex-1 bg-black/80">
+                <iframe id="telescopeFrame" src="" class="w-full h-full border-none opacity-90"></iframe>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Wiki Embed -->
+        <section class="panel-container w-[30%] min-w-[350px] rounded-sm flex flex-col overflow-hidden bg-gray-900">
+            <div class="p-3 border-b border-gray-700 bg-black/50 flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
+                <h2 class="font-bold text-sm text-gray-300 uppercase tracking-widest">Live Wiki</h2>
+            </div>
+            <div class="flex-1 bg-gray-900">
+                <iframe src="https://noita.wiki.gg/" class="w-full h-full border-none opacity-90 hover:opacity-100 transition-opacity"></iframe>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        function updateDashboard() {
+            const seed = document.getElementById('seedInput').value || "12345";
+            const ng = document.getElementById('ngInput').value || "0";
+            document.getElementById('telescopeFrame').src = `https://lymm37.github.io/noita-telescope/?seed=${seed}&ng=${ng}`;
+        }
+
+        function copyAndOpenNoitool() {
+            const seed = document.getElementById('seedInput').value;
+            const btn = document.getElementById('copyBtn');
+            const originalHTML = btn.innerHTML;
+            
+            navigator.clipboard.writeText(seed).then(() => {
+                btn.innerHTML = `<span class="text-green-400">Copied!</span>`;
+                window.open('https://noitool.com/', '_blank');
+                setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+            });
+        }
+
+        // Initialize map on load
+        window.onload = updateDashboard;
+    </script>
+</body>
+</html>
